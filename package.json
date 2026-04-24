@@ -1,0 +1,14 @@
+{
+  "name": "stablefx-nano",
+  "version": "1.0.0",
+  "description": "AI FX Rate API with x402 Nanopayments on Arc",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2"
+  }
+}

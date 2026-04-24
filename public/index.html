@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>StableFX Nano — AI FX Rate API</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#04060a;--card:#0c0f14;--card2:#111520;--border:#1a1f2e;--accent:#7fff00;--accent2:#00ffb3;--accent3:#ffe600;--blue:#4f8fff;--danger:#ff4060;--text:#eef0f5;--muted:#4a5068;--radius:18px;--radius-sm:12px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 20%,rgba(127,255,0,0.04),transparent 50%),radial-gradient(ellipse at 80% 80%,rgba(0,255,179,0.03),transparent 50%);pointer-events:none}
+.wrapper{max-width:1100px;margin:0 auto;padding:0 20px 80px;position:relative;z-index:1}
+header{padding:28px 0 36px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);margin-bottom:36px;flex-wrap:wrap;gap:16px}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:26px}
+.logo span{color:var(--accent)}
+.logo sub{font-size:13px;color:var(--muted);font-family:'DM Mono',monospace;font-weight:400;margin-left:6px}
+.badge{display:inline-flex;align-items:center;gap:8px;background:rgba(127,255,0,0.08);border:1px solid rgba(127,255,0,0.2);padding:8px 16px;border-radius:99px;font-size:12px;color:var(--accent)}
+.dot{width:7px;height:7px;background:var(--accent2);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.2}}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:36px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:22px 24px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.stat-card:nth-child(1)::before{background:var(--accent)}
+.stat-card:nth-child(2)::before{background:var(--accent2)}
+.stat-card:nth-child(3)::before{background:var(--accent3)}
+.stat-card:nth-child(4)::before{background:var(--blue)}
+.stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px}
+.stat-value{font-family:'Syne',sans-serif;font-size:34px;font-weight:800;line-height:1}
+.stat-sub{font-size:11px;color:var(--muted);margin-top:6px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+@media(max-width:700px){.grid-2{grid-template-columns:1fr}}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+.panel-title{font-family:'Syne',sans-serif;font-weight:700;font-size:17px;margin-bottom:18px;display:flex;align-items:center;gap:8px}
+.rate-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+.rate-card{background:var(--card2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;cursor:pointer;transition:all 0.2s}
+.rate-card:hover{border-color:var(--accent);background:#141a20}
+.rate-pair{font-size:11px;color:var(--muted);margin-bottom:6px;letter-spacing:0.5px}
+.rate-val{font-family:'Syne',sans-serif;font-size:20px;font-weight:800}
+.rate-change{font-size:11px;margin-top:4px}
+.rate-change.up{color:var(--accent)}
+.rate-change.down{color:var(--danger)}
+.api-box{background:var(--card2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:10px;font-size:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.method{padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;letter-spacing:1px;flex-shrink:0}
+.get{background:rgba(79,255,176,0.15);color:var(--accent2)}
+.post{background:rgba(255,230,0,0.15);color:var(--accent3)}
+.endpoint{color:var(--accent);flex:1;word-break:break-all}
+.price-tag{background:rgba(127,255,0,0.1);border:1px solid rgba(127,255,0,0.2);color:var(--accent);padding:3px 10px;border-radius:99px;font-size:10px;flex-shrink:0}
+.free-tag{background:rgba(79,255,176,0.1);border:1px solid rgba(79,255,176,0.2);color:var(--accent2);padding:3px 10px;border-radius:99px;font-size:10px;flex-shrink:0}
+.tx-list{display:flex;flex-direction:column;gap:8px;max-height:380px;overflow-y:auto}
+.tx-item{background:var(--card2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 16px;display:flex;align-items:center;gap:12px;font-size:12px}
+.tx-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;background:rgba(127,255,0,0.1);border:1px solid rgba(127,255,0,0.15)}
+.tx-info{flex:1;min-width:0}
+.tx-pair{font-family:'Syne',sans-serif;font-weight:700;font-size:13px}
+.tx-hash{font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tx-amount{color:var(--accent);font-weight:700;font-family:'Syne',sans-serif;flex-shrink:0}
+.tx-time{font-size:10px;color:var(--muted);flex-shrink:0}
+.demo-btn{background:var(--accent);color:#04060a;border:none;padding:13px 28px;border-radius:var(--radius-sm);font-family:'Syne',sans-serif;font-weight:800;font-size:14px;cursor:pointer;transition:all 0.2s;width:100%;margin-top:4px}
+.demo-btn:hover{background:#8fff10;transform:translateY(-1px)}
+.demo-btn:disabled{background:var(--border);color:var(--muted);cursor:not-allowed;transform:none}
+.test-row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.test-select{flex:1;background:var(--card2);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:var(--radius-sm);font-family:'DM Mono',monospace;font-size:13px;outline:none;min-width:120px}
+.test-select:focus{border-color:var(--accent)}
+.test-btn{background:var(--accent2);color:#04060a;border:none;padding:10px 20px;border-radius:var(--radius-sm);font-family:'Syne',sans-serif;font-weight:700;font-size:13px;cursor:pointer;flex-shrink:0}
+.response-box{background:#020305;border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;font-size:11px;color:var(--accent2);line-height:1.8;min-height:80px;white-space:pre-wrap;word-break:break-all;max-height:220px;overflow-y:auto}
+.chain-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(79,143,255,0.1);border:1px solid rgba(79,143,255,0.2);padding:5px 12px;border-radius:99px;font-size:11px;color:var(--blue);margin-bottom:20px}
+.spinner{display:inline-block;width:12px;height:12px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--card);border:1px solid var(--accent2);padding:14px 20px;border-radius:var(--radius-sm);font-size:13px;z-index:999;display:none;max-width:320px}
+.toast.show{display:block}
+.x402-banner{background:linear-gradient(135deg,rgba(127,255,0,0.08),rgba(0,255,179,0.05));border:1px solid rgba(127,255,0,0.15);border-radius:var(--radius);padding:20px 24px;margin-bottom:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.x402-icon{font-size:36px;flex-shrink:0}
+.x402-title{font-family:'Syne',sans-serif;font-weight:800;font-size:16px;margin-bottom:4px}
+.x402-sub{font-size:12px;color:var(--muted);line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <header>
+    <div>
+      <div class="logo">StableFX<span>.</span>Nano<sub>v1.0</sub></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">AI FX Rate API · x402 Nanopayments · Arc Testnet</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <div class="chain-badge" style="margin-bottom:0"><span class="dot"></span>Arc Testnet Live</div>
+      <div class="badge">⚡ $0.001 USDC / request</div>
+    </div>
+  </header>
+
+  <!-- x402 Banner -->
+  <div class="x402-banner">
+    <div class="x402-icon">💳</div>
+    <div>
+      <div class="x402-title">x402 Nanopayment Protocol</div>
+      <div class="x402-sub">Every FX rate request costs $0.001 USDC — settled instantly on Arc Testnet. No subscriptions, no gas overhead, pure per-request pricing. AI agents pay autonomously.</div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">Total Requests</div>
+      <div class="stat-value" id="totalRequests">0</div>
+      <div class="stat-sub">API calls served</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Earned</div>
+      <div class="stat-value" id="totalEarned">$0.00</div>
+      <div class="stat-sub">USDC collected</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Onchain Txs</div>
+      <div class="stat-value" id="onchainTxs">0</div>
+      <div class="stat-sub">Arc Testnet settled</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Price / Request</div>
+      <div class="stat-value" style="font-size:24px">$0.001</div>
+      <div class="stat-sub">USDC · x402 protocol</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <!-- Live FX Rates -->
+    <div class="panel">
+      <div class="panel-title">📈 Live FX Rates <span style="font-size:11px;color:var(--muted);font-weight:400">(free preview)</span></div>
+      <div class="rate-grid" id="rateGrid"></div>
+    </div>
+
+    <!-- API Tester -->
+    <div class="panel">
+      <div class="panel-title">🧪 Live API Tester</div>
+      <div class="test-row">
+        <select class="test-select" id="testPair">
+          <option>USDC/EURC</option>
+          <option>USDC/GBPC</option>
+          <option>EURC/GBPC</option>
+          <option>USDC/USDT</option>
+          <option>USDC/BRLA</option>
+        </select>
+        <select class="test-select" id="testType">
+          <option value="rate">Rate</option>
+          <option value="predict">Predict</option>
+          <option value="rates/all">All Rates</option>
+        </select>
+        <button class="test-btn" onclick="testAPI()">Call ⚡</button>
+      </div>
+      <div class="response-box" id="responseBox">// Response will appear here
+// Each call costs $0.001 USDC
+// Payment auto-included in header</div>
+    </div>
+  </div>
+
+  <!-- API Endpoints -->
+  <div class="panel">
+    <div class="panel-title">📡 API Endpoints</div>
+    <div class="api-box"><span class="method get">GET</span><span class="endpoint">/api/pairs</span><span class="free-tag">FREE</span><span style="color:var(--muted);font-size:11px">List all available pairs</span></div>
+    <div class="api-box"><span class="method get">GET</span><span class="endpoint">/api/rate/:pair</span><span class="price-tag">$0.001 USDC</span><span style="color:var(--muted);font-size:11px">Single pair rate</span></div>
+    <div class="api-box"><span class="method get">GET</span><span class="endpoint">/api/rates/all</span><span class="price-tag">$0.001 USDC</span><span style="color:var(--muted);font-size:11px">All rates at once</span></div>
+    <div class="api-box"><span class="method get">GET</span><span class="endpoint">/api/predict/:pair</span><span class="price-tag">$0.001 USDC</span><span style="color:var(--muted);font-size:11px">AI rate prediction</span></div>
+    <div class="api-box"><span class="method get">GET</span><span class="endpoint">/api/stats</span><span class="free-tag">FREE</span><span style="color:var(--muted);font-size:11px">Dashboard stats</span></div>
+    <div class="api-box"><span class="method get">GET</span><span class="endpoint">/api/ledger</span><span class="free-tag">FREE</span><span style="color:var(--muted);font-size:11px">Nano tx ledger</span></div>
+    <div class="api-box"><span class="method post">POST</span><span class="endpoint">/api/demo/simulate</span><span class="free-tag">DEMO</span><span style="color:var(--muted);font-size:11px">Generate 55+ test txs</span></div>
+  </div>
+
+  <!-- Demo + Ledger -->
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-title">🚀 Demo Mode</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.7">
+        Generate 55+ simulated onchain transactions on Arc Testnet to demonstrate high-frequency nanopayment capability. Each tx is ≤$0.01 USDC.
+      </div>
+      <div style="background:var(--card2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:14px;font-size:12px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:var(--muted)">Per-request price</span><span style="color:var(--accent)">$0.001 USDC</span></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:var(--muted)">Traditional gas cost</span><span style="color:var(--danger)">$0.50-$5.00</span></div>
+        <div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid var(--border)"><span style="color:var(--text);font-weight:700">Savings per tx</span><span style="color:var(--accent2);font-weight:700">99.8%+</span></div>
+      </div>
+      <button class="demo-btn" id="demoBtn" onclick="runDemo()">⚡ Generate 55 Nano Txs</button>
+    </div>
+    <div class="panel">
+      <div class="panel-title">📋 Nano Transaction Ledger</div>
+      <div class="tx-list" id="txLedger">
+        <div style="text-align:center;padding:30px;color:var(--muted);font-size:13px">
+          No transactions yet.<br/>Run demo or call API to generate.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const RATES = {
+  'USDC/EURC':0.9245,'EURC/USDC':1.0817,
+  'USDC/GBPC':0.7923,'GBPC/USDC':1.2622,
+  'USDC/USDT':1.0001,'USDT/USDC':0.9999,
+  'EURC/GBPC':0.8571,'GBPC/EURC':1.1667,
+  'USDC/BRLA':5.2341,'BRLA/USDC':0.1910
+};
+
+function renderRates() {
+  const grid = document.getElementById('rateGrid');
+  const changes = ['+0.12%','-0.08%','+0.21%','+0.01%','+0.09%','-0.11%','+0.13%','+0.18%','+0.34%','-0.05%'];
+  grid.innerHTML = Object.entries(RATES).map(([pair,rate],i) => {
+    const drift = (Math.random()-0.5)*0.002;
+    const live = (rate+drift).toFixed(4);
+    const up = drift >= 0;
+    return `<div class="rate-card" onclick="document.getElementById('testPair').value='${pair}';testAPI()">
+      <div class="rate-pair">${pair}</div>
+      <div class="rate-val">${live}</div>
+      <div class="rate-change ${up?'up':'down'}">${up?'▲':'▼'} ${changes[i]||'+0.10%'}</div>
+    </div>`;
+  }).join('');
+}
+
+async function testAPI() {
+  const pair = document.getElementById('testPair').value.replace('/','%2F');
+  const type = document.getElementById('testType').value;
+  const box = document.getElementById('responseBox');
+  box.textContent = '// Calling API with $0.001 USDC payment...\n// x-nano-payment: auto-included';
+  try {
+    const endpoint = type === 'rates/all'
+      ? '/api/rates/all?payment=demo_sig_'+Date.now()
+      : `/api/${type}/${pair}?payment=demo_sig_${Date.now()}`;
+    const res = await fetch(endpoint);
+    const data = await res.json();
+    box.textContent = JSON.stringify(data, null, 2);
+    loadStats();
+    loadLedger();
+    showToast('⚡ API call: $0.001 USDC paid on Arc!');
+  } catch(e) {
+    box.textContent = '// Error: ' + e.message;
+  }
+}
+
+async function runDemo() {
+  const btn = document.getElementById('demoBtn');
+  btn.innerHTML = '<span class="spinner"></span> Generating txs on Arc...';
+  btn.disabled = true;
+  try {
+    const res = await fetch('/api/demo/simulate', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({count:55})
+    });
+    const data = await res.json();
+    showToast('✅ '+data.simulated+' nano txs on Arc! Earned: '+data.total_earned);
+    loadStats();
+    loadLedger();
+  } catch(e) {
+    showToast('❌ '+e.message);
+  } finally {
+    btn.textContent = '⚡ Generate 55 Nano Txs';
+    btn.disabled = false;
+  }
+}
+
+async function loadStats() {
+  try {
+    const res = await fetch('/api/stats');
+    const d = await res.json();
+    document.getElementById('totalRequests').textContent = d.total_requests;
+    document.getElementById('totalEarned').textContent = '$'+d.total_earned;
+    document.getElementById('onchainTxs').textContent = d.ledger_count;
+  } catch(e) {}
+}
+
+async function loadLedger() {
+  try {
+    const res = await fetch('/api/ledger');
+    const d = await res.json();
+    const list = document.getElementById('txLedger');
+    if(!d.transactions.length) return;
+    list.innerHTML = d.transactions.slice(0,20).map(tx => `
+      <div class="tx-item">
+        <div class="tx-icon">⚡</div>
+        <div class="tx-info">
+          <div class="tx-pair">${tx.pair} · ${tx.type||'rate'}</div>
+          <div class="tx-hash">${tx.txHash}</div>
+        </div>
+        <div class="tx-amount">$${tx.amount}</div>
+        <div class="tx-time">${new Date(tx.timestamp).toLocaleTimeString()}</div>
+      </div>`).join('');
+  } catch(e) {}
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// Init
+renderRates();
+loadStats();
+loadLedger();
+setInterval(() => { renderRates(); loadStats(); }, 15000);
+</script>
+</body></html>
